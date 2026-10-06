@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="Painel local de estudos para o ENEM: cronômetro, metas, calendário e questões.">
+  <title>Foco no ENEM — Painel</title>
+  <link rel="icon" href="/foco-logo.svg">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #000;
+      --surface: #080808;
+      --surface-raised: #0d0d0d;
+      --surface-active: #151515;
+      --line: #222;
+      --line-strong: #343434;
+      --text: #f5f5f5;
+      --muted: #a0a0a0;
+      --subtle: #6f6f6f;
+      --white: #fff;
+      --radius: 18px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html { min-width: 320px; background: var(--bg); }
+    body { margin: 0; min-width: 320px; min-height: 100vh; color: var(--text); background: #000; }
+    button, input, select, textarea { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline: 2px solid #ddd; outline-offset: 3px; }
+    a { color: var(--text); }
+    .app-shell { width: min(1480px, 100%); min-height: 100vh; margin: 0 auto; display: grid; grid-template-columns: 244px minmax(0, 1fr); }
+    .sidebar { position: sticky; top: 0; height: 100vh; padding: 27px 17px 19px; display: flex; flex-direction: column; border-right: 1px solid var(--line); background: #000; }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 2px 10px 28px; color: var(--text); text-decoration: none; }
+    .brand-symbol { width: 37px; height: 37px; display: grid; place-items: center; flex: 0 0 auto; border: 1px solid #383838; border-radius: 12px; color: #fff; background: #080808; font-family: Georgia, serif; font-size: 27px; line-height: 1; }
+    .brand-name { display: block; font-size: 14px; font-weight: 750; letter-spacing: -.04em; }
+    .brand-tag { display: block; margin-top: 4px; color: var(--subtle); font-size: 9px; font-weight: 700; letter-spacing: .16em; }
+    .nav-label { margin: 0 11px 9px; color: var(--subtle); font-size: 9px; font-weight: 750; letter-spacing: .15em; text-transform: uppercase; }
+    .main-nav { display: grid; gap: 5px; }
+    .nav-link { width: 100%; min-height: 43px; padding: 0 11px; display: flex; align-items: center; gap: 11px; border: 1px solid transparent; border-radius: 11px; color: #a4a4a4; background: transparent; font-size: 12px; font-weight: 620; text-align: left; cursor: pointer; transition: background .15s ease, color .15s ease, border-color .15s ease; }
+    .nav-link:hover { color: var(--white); background: #0c0c0c; }
+    .nav-link.active { color: var(--white); border-color: #242424; background: #111; }
+    .nav-icon { width: 21px; color: #aaa; font-size: 16px; text-align: center; }
+    .sidebar-bottom { margin-top: auto; padding: 14px 11px 0; border-top: 1px solid var(--line); }
+    .local-indicator { display: flex; align-items: center; gap: 8px; color: #aaa; font-size: 10px; }
+    .local-dot { width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: #ddd; }
+    .local-copy { margin: 8px 0 0; color: var(--subtle); font-size: 10px; line-height: 1.55; }
+    .workspace { min-width: 0; padding: 27px clamp(18px, 4vw, 52px) 45px; }
+    .topbar { min-height: 66px; margin: 0 0 32px; display: flex; justify-content: space-between; align-items: center; gap: 16px; border-bottom: 1px solid var(--line); }
+    .topbar-title { min-width: 0; }
+    .topbar-title p { margin: 0 0 4px; color: var(--subtle); font-size: 9px; font-weight: 750; letter-spacing: .14em; text-transform: uppercase; }
+    .topbar-title h1 { margin: 0; font-size: clamp(20px, 2.4vw, 26px); line-height: 1.15; letter-spacing: -.045em; }
+    .top-actions { display: flex; align-items: center; gap: 9px; }
+    .today-chip, .local-chip { min-height: 35px; padding: 0 11px; display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: #050505; font-size: 10px; white-space: nowrap; }
+    .today-chip strong { color: var(--white); font-size: 11px; }
+    .local-chip { color: #bdbdbd; }
+    .icon-btn { width: 37px; height: 37px; display: grid; place-items: center; border: 1px solid var(--line-strong); border-radius: 11px; color: #ddd; background: #080808; cursor: pointer; transition: background .15s ease; }
+    .icon-btn:hover { background: #181818; }
+    .icon-btn svg { width: 17px; height: 17px; }
+    .view-panel { animation: enter .18s ease both; }
+    @keyframes enter { from { opacity: .45; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .section-intro { margin: 0 0 23px; }
+    .eyebrow { margin: 0 0 8px; color: #858585; font-size: 9px; font-weight: 760; letter-spacing: .15em; text-transform: uppercase; }
+    .section-intro h2 { margin: 0; font-size: clamp(22px, 3vw, 31px); line-height: 1.12; letter-spacing: -.05em; }
+    .section-intro p:last-child { max-width: 680px; margin: 8px 0 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
+    .metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 11px; margin-bottom: 13px; }
+    .metric-card, .panel { min-width: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+    .metric-card { min-height: 112px; padding: 16px; }
+    .metric-label { display: block; color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+    .metric-value { display: block; margin-top: 15px; font-size: clamp(19px, 2vw, 25px); font-weight: 740; line-height: 1; letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
+    .metric-help { display: block; margin-top: 7px; color: var(--subtle); font-size: 10px; }
+    .content-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 13px; margin-top: 13px; }
+    .panel { padding: 19px; }
+    .panel-header { min-height: 31px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .panel-header h3 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: -.02em; }
+    .panel-header p { margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .text-link { padding: 0; border: 0; color: #d0d0d0; background: none; font-size: 10px; cursor: pointer; }
+    .text-link:hover { color: #fff; text-decoration: underline; }
+    .progress-block + .progress-block { margin-top: 21px; }
+    .progress-label { display: flex; justify-content: space-between; gap: 10px; color: #d0d0d0; font-size: 10px; }
+    .progress-label strong { color: #fff; font-weight: 650; }
+    .progress-track { height: 6px; margin-top: 9px; overflow: hidden; border-radius: 999px; background: #202020; }
+    .progress-fill { width: 0; height: 100%; border-radius: inherit; background: #e7e7e7; transition: width .25s ease; }
+    .week-total { color: var(--muted); font-size: 10px; }
+    .week-chart { min-height: 131px; display: flex; align-items: flex-end; justify-content: space-between; gap: 9px; padding-top: 4px; }
+    .day-column { height: 119px; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 7px; }
+    .bar-track { width: min(24px, 70%); height: 90px; display: flex; align-items: flex-end; overflow: hidden; border: 1px solid #242424; border-radius: 6px; background: #050505; }
+    .bar { width: 100%; min-height: 2px; background: #bcbcbc; transition: height .2s ease; }
+    .day-column.today .bar { background: #fff; }
+    .day-label { color: var(--subtle); font-size: 9px; }
+    .day-column.today .day-label { color: #fff; }
+    .list-stack { display: grid; gap: 8px; }
+    .list-row { min-width: 0; padding: 10px 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; border-bottom: 1px solid #1a1a1a; }
+    .list-row:last-child { border-bottom: 0; }
+    .list-main { min-width: 0; }
+    .list-main strong { display: block; overflow: hidden; font-size: 11px; font-weight: 640; text-overflow: ellipsis; white-space: nowrap; }
+    .list-main span { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; }
+    .list-value { color: #ddd; font-size: 10px; white-space: nowrap; }
+    .empty-state { padding: 20px 10px; color: var(--muted); font-size: 11px; line-height: 1.6; text-align: center; }
+    .button { min-height: 40px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #3a3a3a; border-radius: 11px; color: #050505; background: #ededed; font-size: 11px; font-weight: 720; text-decoration: none; cursor: pointer; transition: background .15s ease, transform .15s ease; }
+    .button:hover { transform: translateY(-1px); background: #fff; }
+    .button.secondary { color: #e9e9e9; background: #090909; }
+    .button.secondary:hover { background: #171717; }
+    .button.danger { color: #ddd; border-color: #292929; background: #0a0a0a; }
+    .button.small { min-height: 33px; padding: 0 10px; font-size: 10px; }
+    .button-row { display: flex; flex-wrap: wrap; gap: 9px; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+    .field { min-width: 0; margin-bottom: 14px; }
+    .field label { display: block; margin-bottom: 7px; color: #ddd; font-size: 10px; font-weight: 650; }
+    .field small { display: block; margin-top: 6px; color: var(--subtle); font-size: 9px; line-height: 1.5; }
+    .field input, .field select, .field textarea { width: 100%; min-height: 40px; padding: 9px 11px; border: 1px solid #292929; border-radius: 10px; color: #f2f2f2; background: #030303; font-size: 11px; }
+    .field input::placeholder, .field textarea::placeholder { color: #727272; }
+    .field input[type="range"] { min-height: 23px; padding: 0; accent-color: #eee; }
+    .field textarea { min-height: 92px; resize: vertical; }
+    .form-note { color: var(--muted); font-size: 10px; line-height: 1.6; }
+    .goal-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+    .goal-card { max-width: 790px; }
+    .goal-card .form-grid { margin-top: 19px; }
+    .calendar-panel { padding: clamp(13px, 2vw, 22px); }
+    .calendar-toolbar { margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .calendar-toolbar h3 { margin: 0; font-size: 14px; text-transform: capitalize; }
+    .calendar-controls { display: flex; gap: 7px; }
+    .calendar-controls .icon-btn { width: 33px; height: 33px; }
+    .calendar-summary { display: flex; flex-wrap: wrap; gap: 16px; margin: 0 0 16px; color: var(--muted); font-size: 10px; }
+    .calendar-summary strong { color: #eee; }
+    .calendar-weekdays, .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+    .calendar-weekdays { margin-bottom: 6px; }
+    .calendar-weekdays span { padding: 7px 0; color: var(--subtle); font-size: 9px; text-align: center; }
+    .calendar-empty { min-height: 72px; }
+    .calendar-day { min-width: 0; min-height: 72px; padding: 7px; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; border: 1px solid #1b1b1b; border-radius: 10px; color: #ddd; background: #030303; text-align: left; cursor: pointer; }
+    .calendar-day:hover { border-color: #555; background: #0c0c0c; }
+    .calendar-day.today { border-color: #777; }
+    .calendar-day.selected { outline: 1px solid #eee; outline-offset: -1px; background: #111; }
+    .calendar-day.has-activity { background: #101010; }
+    .calendar-day .day-number { font-size: 10px; font-weight: 680; }
+    .calendar-day .day-minutes, .calendar-day .day-questions { max-width: 100%; overflow: hidden; color: #aaa; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+    .calendar-detail { margin-top: 16px; padding: 15px; border: 1px solid #1e1e1e; border-radius: 13px; background: #030303; }
+    .calendar-detail h4 { margin: 0; font-size: 11px; }
+    .calendar-detail p { margin: 6px 0 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
+    .timer-layout { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(270px, .92fr); gap: 13px; align-items: stretch; }
+    .timer-card, .music-card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+    .timer-card { min-height: 555px; padding: clamp(19px, 3vw, 34px); display: flex; flex-direction: column; align-items: center; }
+    .timer-intro { width: 100%; align-self: flex-start; }
+    .timer-intro h2 { margin: 0; font-size: 19px; letter-spacing: -.035em; }
+    .timer-intro p { margin: 7px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .subject-row { width: 100%; margin-top: 17px; display: grid; grid-template-columns: minmax(0, .7fr) minmax(0, 1fr); gap: 8px; }
+    .mode-tabs { margin: 20px auto 11px; padding: 4px; display: flex; gap: 3px; border: 1px solid #242424; border-radius: 999px; background: #030303; }
+    .mode-tab { min-height: 32px; padding: 0 12px; border: 0; border-radius: 999px; color: var(--muted); background: transparent; font-size: 10px; font-weight: 650; cursor: pointer; }
+    .mode-tab.active { color: #fff; background: #1c1c1c; }
+    .timer-wrap { width: min(245px, 65vw); height: min(245px, 65vw); min-width: 190px; min-height: 190px; position: relative; display: grid; place-items: center; margin: 5px 0 15px; }
+    .timer-svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+    .timer-track, .timer-progress { fill: none; stroke-width: 4; }
+    .timer-track { stroke: #262626; }
+    .timer-progress { stroke: #e8e8e8; stroke-linecap: round; stroke-dasharray: 691.15; stroke-dashoffset: 0; transition: stroke-dashoffset .25s linear; }
+    .timer-content { position: relative; z-index: 1; text-align: center; }
+    .timer-caption { color: var(--muted); font-size: 8px; font-weight: 740; letter-spacing: .14em; }
+    .time { margin: 10px 0 6px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: clamp(38px, 6vw, 53px); font-variant-numeric: tabular-nums; letter-spacing: -.08em; line-height: 1; }
+    .timer-hint { color: var(--muted); font-size: 9px; }
+    .controls { display: flex; align-items: center; justify-content: center; gap: 9px; }
+    .round-btn { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid #292929; border-radius: 11px; color: #ddd; background: #050505; cursor: pointer; }
+    .round-btn:hover { background: #191919; }
+    .round-btn svg { width: 15px; height: 15px; }
+    .primary-btn { min-width: 145px; min-height: 42px; padding: 0 18px; border: 1px solid #f0f0f0; border-radius: 11px; color: #000; background: #eee; font-size: 11px; font-weight: 750; cursor: pointer; }
+    .primary-btn:hover { background: #fff; }
+    .keyboard-note { margin-top: 10px; color: var(--subtle); font-size: 9px; }
+    kbd { padding: 2px 5px; border: 1px solid #292929; border-radius: 4px; color: #ccc; background: #050505; font-size: 8px; }
+    .music-card { padding: 20px; display: flex; flex-direction: column; }
+    .music-card h3 { margin: 0; font-size: 13px; }
+    .music-card .section-note { margin: 6px 0 15px; color: var(--muted); font-size: 10px; line-height: 1.55; }
+    .ambient-toggle { min-height: 36px; padding: 0 10px; display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; border: 1px solid #282828; border-radius: 9px; color: #ccc; background: #030303; font-size: 10px; cursor: pointer; }
+    .audio-indicator { width: 7px; height: 7px; border-radius: 50%; background: #777; }
+    .ambient-toggle.playing .audio-indicator { background: #fff; box-shadow: 0 0 0 3px #333; }
+    .music-track { margin: 18px 0 11px; display: flex; align-items: center; gap: 10px; }
+    .track-art { width: 34px; height: 34px; display: grid; place-items: center; flex: 0 0 auto; border: 1px solid #282828; border-radius: 10px; color: #eee; background: #050505; font-size: 15px; }
+    .track-info { min-width: 0; flex: 1; }
+    .track-info strong { display: block; overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .track-info span { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; }
+    .track-controls { display: flex; gap: 5px; }
+    .track-nav { width: 28px; height: 28px; border: 1px solid #272727; border-radius: 8px; color: #ddd; background: #030303; cursor: pointer; }
+    .track-nav:hover { background: #151515; }
+    .track-playlist { display: grid; gap: 6px; margin: 0 0 12px; }
+    .track-choice { width: 100%; min-height: 34px; padding: 0 9px; border: 1px solid #1f1f1f; border-radius: 8px; color: #aaa; background: #030303; font-size: 9px; text-align: left; cursor: pointer; }
+    .track-choice.active { border-color: #595959; color: #fff; background: #111; }
+    .music-player { width: 100%; height: 39px; color-scheme: dark; }
+    .track-hint, .copyright-note { margin: 9px 0 0; color: var(--muted); font-size: 9px; line-height: 1.5; }
+    .copyright-note { color: #777; }
+    .question-form { max-width: 700px; }
+    .question-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 15px 0; }
+    .question-summary .metric-card { min-height: 88px; padding: 13px; }
+    .question-summary .metric-value { margin-top: 12px; font-size: 20px; }
+    .question-entry { padding: 11px 0; display: grid; grid-template-columns: minmax(0,1fr) auto auto; align-items: center; gap: 12px; border-bottom: 1px solid #1b1b1b; }
+    .question-entry:last-child { border-bottom: 0; }
+    .question-entry-main { min-width: 0; }
+    .question-entry-main strong { display: block; overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .question-entry-main span { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; }
+    .question-entry-count { color: #eee; font-size: 10px; white-space: nowrap; }
+    .delete-entry { padding: 5px 7px; border: 1px solid #272727; border-radius: 7px; color: #999; background: #050505; font-size: 9px; cursor: pointer; }
+    .delete-entry:hover { color: #fff; border-color: #555; }
+    .contact-card { max-width: 690px; }
+    .contact-email { margin: 19px 0; padding: 17px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; border: 1px solid #242424; border-radius: 13px; background: #030303; }
+    .contact-email a { font-size: clamp(13px, 2vw, 17px); font-weight: 650; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+    .contact-note { color: var(--muted); font-size: 10px; line-height: 1.7; }
+    .app-footer { margin-top: 32px; padding-top: 14px; border-top: 1px solid #181818; color: var(--subtle); font-size: 9px; line-height: 1.6; }
+    .toast { position: fixed; left: 50%; bottom: 20px; z-index: 30; max-width: calc(100vw - 28px); padding: 11px 15px; border: 1px solid #444; border-radius: 10px; color: #fff; background: #111; box-shadow: 0 10px 32px #000; font-size: 11px; opacity: 0; pointer-events: none; transform: translate(-50%, 10px); transition: opacity .2s ease, transform .2s ease; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    dialog { width: min(480px, calc(100vw - 24px)); max-height: 86vh; padding: 0; overflow: auto; border: 1px solid #333; border-radius: 17px; color: var(--text); background: #050505; box-shadow: 0 24px 80px #000; }
+    dialog::backdrop { background: rgba(0,0,0,.82); }
+    .dialog-head { padding: 18px 19px 13px; display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; border-bottom: 1px solid #222; }
+    .dialog-head h2 { margin: 0; font-size: 16px; }
+    .dialog-head p { margin: 5px 0 0; color: var(--muted); font-size: 10px; }
+    .dialog-body { padding: 17px 19px 20px; }
+    .dialog-actions { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .tiny { margin: 12px 0 0; color: var(--subtle); font-size: 9px; line-height: 1.5; }
+    .reduce-motion *, .reduce-motion *::before, .reduce-motion *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    @media (max-width: 1050px) { .app-shell { grid-template-columns: 207px minmax(0,1fr); } .workspace { padding-right: 25px; padding-left: 25px; } .metric-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .timer-layout { grid-template-columns: minmax(0,1fr); } .timer-card { min-height: 0; } .music-card { min-height: 0; } }
+    @media (max-width: 700px) {
+      .app-shell { display: block; }
+      .sidebar { position: sticky; z-index: 15; top: 0; height: auto; padding: 10px 12px 9px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .brand { padding: 0 3px 10px; }
+      .brand-symbol { width: 30px; height: 30px; border-radius: 9px; font-size: 22px; }
+      .brand-tag { font-size: 8px; }
+      .nav-label, .sidebar-bottom { display: none; }
+      .main-nav { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+      .nav-link { width: auto; min-height: 35px; flex: 0 0 auto; padding: 0 9px; gap: 6px; font-size: 9px; }
+      .nav-icon { width: auto; font-size: 13px; }
+      .workspace { padding: 17px 13px 30px; }
+      .topbar { min-height: 56px; margin-bottom: 23px; }
+      .local-chip { display: none; }
+      .content-grid { grid-template-columns: minmax(0,1fr); }
+      .metric-grid { gap: 8px; }
+      .metric-card { min-height: 96px; padding: 13px; }
+      .metric-value { margin-top: 12px; }
+      .panel { padding: 15px; }
+      .calendar-day { min-height: 57px; padding: 5px; gap: 4px; border-radius: 8px; }
+      .calendar-empty { min-height: 57px; }
+      .calendar-weekdays, .calendar-grid { gap: 3px; }
+      .calendar-day .day-minutes, .calendar-day .day-questions { font-size: 7px; }
+      .calendar-weekdays span { font-size: 8px; }
+      .form-grid { grid-template-columns: minmax(0,1fr); gap: 0; }
+      .question-summary { gap: 7px; }
+      .question-summary .metric-card { padding: 10px; }
+      .question-summary .metric-label { font-size: 8px; }
+      .question-summary .metric-value { font-size: 17px; }
+      .question-entry { grid-template-columns: minmax(0,1fr) auto; gap: 8px; }
+      .question-entry-count { grid-column: 2; grid-row: 1; }
+      .question-entry .delete-entry { grid-column: 1 / -1; justify-self: end; }
+      .contact-email { align-items: flex-start; flex-direction: column; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Navegação principal">
+      <a class="brand" href="#" aria-label="Foco no ENEM — painel">
+        <span class="brand-symbol" aria-hidden="true">☾</span>
+        <span><span class="brand-name">foco no enem</span><span class="brand-tag">SEU ESTUDO, SEU RITMO</span></span>
+      </a>
+      <p class="nav-label">Seu espaço</p>
+      <nav class="main-nav">
+        <button class="nav-link active" type="button" data-nav="dashboard" aria-current="page"><span class="nav-icon" aria-hidden="true">⌂</span><span>Painel</span></button>
+        <button class="nav-link" type="button" data-nav="timer"><span class="nav-icon" aria-hidden="true">◷</span><span>Cronômetro</span></button>
+        <button class="nav-link" type="button" data-nav="goals"><span class="nav-icon" aria-hidden="true">◎</span><span>Metas</span></button>
+        <button class="nav-link" type="button" data-nav="calendar"><span class="nav-icon" aria-hidden="true">▦</span><span>Calendário</span></button>
+        <button class="nav-link" type="button" data-nav="questions"><span class="nav-icon" aria-hidden="true">≡</span><span>Questões</span></button>
+        <button class="nav-link" type="button" data-nav="contact"><span class="nav-icon" aria-hidden="true">@</span><span>Contato</span></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="local-indicator"><span class="local-dot" aria-hidden="true"></span>Perfil local</div>
+        <p class="local-copy">Seu progresso fica salvo neste navegador. Sem conta e sem sincronização externa.</p>
+      </div>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar">
+        <div class="topbar-title"><p>FOCO NO ENEM</p><h1 id="activeViewTitle">Painel</h1></div>
+        <div class="top-actions">
+          <span class="local-chip">● Salvo neste dispositivo</span>
+          <div class="today-chip"><span>FOCO HOJE</span><strong id="headerMinutes">0 min</strong></div>
+          <button class="icon-btn" id="settingsOpen" type="button" aria-label="Abrir configurações" title="Configurações">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 15 .1.1a1.8 1.8 0 1 1-2.5 2.5l-.1-.1a1.8 1.8 0 0 0-3 .9v.2a1.8 1.8 0 1 1-3.6 0v-.2a1.8 1.8 0 0 0-3-.9l-.1.1a1.8 1.8 0 1 1-2.5-2.5l.1-.1a1.8 1.8 0 0 0-.9-3h-.2a1.8 1.8 0 1 1 0-3.6h.2a1.8 1.8 0 0 0 .9-3l-.1-.1a1.8 1.8 0 1 1 2.5-2.5l.1.1a1.8 1.8 0 0 0 3-.9v-.2a1.8 1.8 0 1 1 3.6 0v.2a1.8 1.8 0 0 0 3 .9l.1-.1a1.8 1.8 0 1 1 2.5 2.5l-.1.1a1.8 1.8 0 0 0 .9 3h.2a1.8 1.8 0 1 1 0 3.6h-.2a1.8 1.8 0 0 0-.9 3Z"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <section class="view-panel" id="dashboardView" data-view-panel="dashboard">
+          <div class="section-intro"><p class="eyebrow">VISÃO GERAL</p><h2>Seu ritmo, sem pressa.</h2><p>Acompanhe o foco, as questões e suas metas em um só lugar.</p></div>
+          <div class="metric-grid">
+            <article class="metric-card"><span class="metric-label">Foco hoje</span><strong class="metric-value" id="todayTime">0 min</strong><span class="metric-help">Tempo registrado em blocos completos</span></article>
+            <article class="metric-card"><span class="metric-label">Blocos completos hoje</span><strong class="metric-value" id="todaySessions">0</strong><span class="metric-help">Cada sessão finalizada conta</span></article>
+            <article class="metric-card"><span class="metric-label">Questões hoje</span><strong class="metric-value" id="todayQuestions">0</strong><span class="metric-help">Questões registradas por você</span></article>
+            <article class="metric-card"><span class="metric-label">Foco nos últimos 7 dias</span><strong class="metric-value" id="weekTime">0 min</strong><span class="metric-help">Seu ritmo recente</span></article>
+          </div>
+          <div class="content-grid">
+            <article class="panel">
+              <div class="panel-header"><div><h3>Metas de hoje</h3><p>Veja seu avanço sem perder o ritmo.</p></div><button class="text-link" type="button" data-navigate="goals">Editar metas →</button></div>
+              <div class="progress-block"><div class="progress-label"><span id="goalText">Foco · meta de 16 horas</span><strong id="goalLabel">0%</strong></div><div class="progress-track" role="progressbar" aria-label="Progresso da meta diária de foco" aria-valuemin="0" aria-valuemax="960" aria-valuenow="0" id="goalProgress"><div class="progress-fill" id="goalFill"></div></div></div>
+              <div class="progress-block"><div class="progress-label"><span id="questionGoalText">Questões · meta de 20 por dia</span><strong id="questionGoalLabel">0%</strong></div><div class="progress-track" role="progressbar" aria-label="Progresso da meta diária de questões" aria-valuemin="0" aria-valuemax="20" aria-valuenow="0" id="questionGoalProgress"><div class="progress-fill" id="questionGoalFill"></div></div></div>
+              <div class="button-row" style="margin-top:19px"><button class="button secondary small" type="button" data-navigate="timer">Iniciar foco</button><button class="button secondary small" type="button" data-navigate="questions">Registrar questões</button></div>
+            </article>
+            <article class="panel">
+              <div class="panel-header"><div><h3>Ritmo da semana</h3><p>Minutos de foco por dia.</p></div><span class="week-total" id="weekTotal">0 min</span></div>
+              <div class="week-chart" id="weekChart" aria-label="Gráfico de minutos de estudo nos últimos sete dias"></div>
+            </article>
+          </div>
+          <div class="content-grid">
+            <article class="panel"><div class="panel-header"><div><h3>Sessões recentes</h3><p>Blocos de foco concluídos.</p></div><button class="text-link" type="button" data-navigate="calendar">Ver calendário →</button></div><div class="list-stack" id="recentSessions"></div></article>
+            <article class="panel"><div class="panel-header"><div><h3>Questões recentes</h3><p>Seu histórico de prática.</p></div><button class="text-link" type="button" data-navigate="questions">Ver questões →</button></div><div class="list-stack" id="recentQuestions"></div></article>
+          </div>
+        </section>
+
+        <section class="view-panel" id="timerView" data-view-panel="timer" hidden>
+          <div class="section-intro"><p class="eyebrow">SESSÃO DE ESTUDO</p><h2>Um bloco de cada vez.</h2><p>Escolha uma matéria, defina seu objetivo e acompanhe o tempo de foco.</p></div>
+          <div class="timer-layout">
+            <section class="timer-card" aria-label="Cronômetro de estudo">
+              <div class="timer-intro"><h2>Seu tempo de foco</h2><p>Blocos de até 4 horas. O tempo entra no painel ao concluir o bloco.</p></div>
+              <div class="subject-row">
+                <select class="field-select" id="subjectSelect" aria-label="Matéria de estudo"></select>
+                <input class="task-input" id="taskInput" type="text" maxlength="80" placeholder="O que vamos estudar?" aria-label="Objetivo desta sessão">
+              </div>
+              <div class="mode-tabs" role="tablist" aria-label="Tipo de sessão">
+                <button class="mode-tab active" type="button" data-mode="focus" role="tab" aria-selected="true">Foco</button>
+                <button class="mode-tab" type="button" data-mode="short" role="tab" aria-selected="false">Pausa curta</button>
+                <button class="mode-tab" type="button" data-mode="long" role="tab" aria-selected="false">Pausa longa</button>
+              </div>
+              <div class="timer-wrap" aria-live="off">
+                <svg class="timer-svg" viewBox="0 0 240 240" aria-hidden="true"><circle class="timer-track" cx="120" cy="120" r="110"></circle><circle class="timer-progress" id="timerProgress" cx="120" cy="120" r="110"></circle></svg>
+                <div class="timer-content"><div class="timer-caption" id="timerCaption">HORA DE FOCAR</div><div class="time" id="timeDisplay" role="timer" aria-label="Tempo restante">25:00</div><div class="timer-hint" id="timerHint">Pronto quando você estiver.</div></div>
+              </div>
+              <div class="controls">
+                <button class="round-btn" id="resetBtn" type="button" aria-label="Reiniciar bloco" title="Reiniciar bloco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5"/></svg></button>
+                <button class="primary-btn" id="startBtn" type="button">Começar a estudar</button>
+                <button class="round-btn" id="skipBtn" type="button" aria-label="Preparar próxima etapa" title="Próxima etapa"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 5.8c0-.7.8-1.1 1.4-.7l8.4 6a1.1 1.1 0 0 1 0 1.8l-8.4 6c-.6.4-1.4 0-1.4-.7V5.8Z"/><path d="M18 5.5h2v13h-2z"/></svg></button>
+              </div>
+              <div class="keyboard-note">Atalho: <kbd>espaço</kbd> iniciar ou pausar</div>
+            </section>
+            <aside class="music-card" aria-label="Música lo-fi">
+              <h3>Música para acompanhar</h3><p class="section-note">A playlist repete em sequência. Ao iniciar o cronômetro, a faixa atual começa; ao pausar, ela também pausa.</p>
+              <button class="ambient-toggle" id="audioToggle" type="button" aria-pressed="false"><span class="audio-indicator" aria-hidden="true"></span><span id="audioLabel">Som ambiente desligado</span></button>
+              <div class="music-track"><div class="track-art" aria-hidden="true">♫</div><div class="track-info"><strong id="trackTitle">Noite de Âmbar</strong><span>Playlist · Sara Carvalho</span></div><div class="track-controls"><button class="track-nav" id="previousTrack" type="button" aria-label="Faixa anterior">‹</button><button class="track-nav" id="nextTrack" type="button" aria-label="Próxima faixa">›</button></div></div>
+              <div class="track-playlist" id="trackPlaylist" aria-label="Faixas da playlist"><button type="button" class="track-choice active" data-track="0" aria-pressed="true">1 · Noite de Âmbar</button><button type="button" class="track-choice" data-track="1" aria-pressed="false">2 · Lembrança Brasileira</button><button type="button" class="track-choice" data-track="2" aria-pressed="false">3 · 1h40 da Manhã</button></div>
+              <audio class="music-player" id="musicPlayer" src="/manus-storage/noite-de-ambar_ba9bfe6b.mp3" controls preload="metadata" controlslist="nodownload" aria-label="Player de música de Sara Carvalho"></audio>
+              <p class="track-hint">Você também pode escolher uma faixa ou usar os controles do player.</p><p class="copyright-note">© Sara Carvalho · faixas enviadas por você.</p>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view-panel" id="goalsView" data-view-panel="goals" hidden>
+          <div class="section-intro"><p class="eyebrow">SEU PLANO</p><h2>Metas que cabem no seu ritmo.</h2><p>Defina quanto quer estudar e quantas questões pretende resolver por dia. Você pode ajustar quando quiser.</p></div>
+          <article class="panel goal-card">
+            <div class="goal-header"><div><h3 style="margin:0;font-size:14px">Metas diárias</h3><p class="form-note">O painel e o calendário acompanham seu progresso automaticamente.</p></div><span class="local-chip">Perfil local</span></div>
+            <form id="goalsForm">
+              <div class="form-grid">
+                <div class="field"><label for="goalHours">Meta diária de foco (horas)</label><input id="goalHours" type="number" min="1" max="24" step="1" value="16" required><small>De 1 a 24 horas; sua meta atual é 16 horas.</small></div>
+                <div class="field"><label for="questionGoal">Meta diária de questões</label><input id="questionGoal" type="number" min="0" max="1000" step="1" value="20" required><small>De 0 a 1.000. Use 0 se não quiser acompanhar uma meta de questões.</small></div>
+              </div>
+              <div class="button-row"><button class="button" type="submit">Salvar metas</button><button class="button secondary" type="button" data-navigate="dashboard">Voltar ao painel</button></div>
+            </form>
+          </article>
+          <div class="content-grid"><article class="panel"><div class="panel-header"><div><h3>Hoje · foco</h3><p id="focusGoalDetail">0 de 16 horas</p></div></div><div class="progress-track" role="progressbar" aria-label="Progresso da meta de foco" aria-valuemin="0" aria-valuemax="960" aria-valuenow="0" id="goalProgressDetail"><div class="progress-fill" id="goalFillDetail"></div></div></article><article class="panel"><div class="panel-header"><div><h3>Hoje · questões</h3><p id="questionGoalDetail">0 de 20 questões</p></div></div><div class="progress-track" role="progressbar" aria-label="Progresso da meta de questões" aria-valuemin="0" aria-valuemax="20" aria-valuenow="0" id="questionGoalProgressDetail"><div class="progress-fill" id="questionGoalFillDetail"></div></div></article></div>
+        </section>
+
+        <section class="view-panel" id="calendarView" data-view-panel="calendar" hidden>
+          <div class="section-intro"><p class="eyebrow">SEU HISTÓRICO</p><h2>Calendário de estudos.</h2><p>Veja em quais dias você focou, quantos blocos concluiu e quantas questões registrou.</p></div>
+          <article class="panel calendar-panel">
+            <div class="calendar-toolbar"><div class="calendar-controls"><button class="icon-btn" id="calendarPrev" type="button" aria-label="Mês anterior">‹</button></div><h3 id="calendarTitle">Mês</h3><div class="calendar-controls"><button class="icon-btn" id="calendarNext" type="button" aria-label="Próximo mês">›</button></div></div>
+            <div class="calendar-summary"><span>Foco no mês: <strong id="calendarMonthFocus">0 min</strong></span><span>Questões no mês: <strong id="calendarMonthQuestions">0</strong></span></div>
+            <div class="calendar-weekdays" aria-hidden="true"><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span><span>Dom</span></div>
+            <div class="calendar-grid" id="calendarGrid" aria-label="Dias do mês"></div>
+            <div class="calendar-detail" id="calendarDetail" aria-live="polite"></div>
+          </article>
+        </section>
+
+        <section class="view-panel" id="questionsView" data-view-panel="questions" hidden>
+          <div class="section-intro"><p class="eyebrow">PRÁTICA</p><h2>Questão por questão.</h2><p>Registre quantas questões resolveu e, se quiser, quantas acertou. Os registros entram no painel e no calendário.</p></div>
+          <div class="question-summary">
+            <article class="metric-card"><span class="metric-label">Total resolvidas</span><strong class="metric-value" id="allQuestions">0</strong></article>
+            <article class="metric-card"><span class="metric-label">Hoje</span><strong class="metric-value" id="questionsTodaySummary">0</strong></article>
+            <article class="metric-card"><span class="metric-label">Acertos registrados</span><strong class="metric-value" id="allCorrect">0</strong></article>
+          </div>
+          <div class="content-grid">
+            <article class="panel question-form"><div class="panel-header"><div><h3>Registrar prática</h3><p>Adicione uma sessão de questões ao seu histórico.</p></div></div>
+              <form id="questionsForm">
+                <div class="form-grid">
+                  <div class="field"><label for="questionSubject">Matéria</label><select id="questionSubject" required></select></div>
+                  <div class="field"><label for="questionCount">Questões feitas</label><input id="questionCount" type="number" min="1" max="5000" step="1" placeholder="Ex.: 20" required></div>
+                  <div class="field"><label for="questionCorrect">Acertos (opcional)</label><input id="questionCorrect" type="number" min="0" step="1" placeholder="Deixe em branco se não quiser registrar"></div>
+                </div>
+                <div class="button-row"><button class="button" type="submit">Salvar registro</button></div>
+              </form>
+            </article>
+            <article class="panel"><div class="panel-header"><div><h3>Histórico de questões</h3><p>Seus registros mais recentes primeiro.</p></div></div><div id="questionHistoryList" class="list-stack"></div></article>
+          </div>
+        </section>
+
+        <section class="view-panel" id="contactView" data-view-panel="contact" hidden>
+          <div class="section-intro"><p class="eyebrow">CONTATO</p><h2>Fale com a gente.</h2><p>Tem uma ideia, dúvida ou quer mandar um recado? Escreva para o contato do app.</p></div>
+          <article class="panel contact-card">
+            <div class="panel-header"><div><h3>Entre em contato</h3><p>O link abre seu aplicativo de e-mail.</p></div></div>
+            <div class="contact-email"><a href="mailto:sarabmr939@gmail.com">sarabmr939@gmail.com</a><a class="button secondary small" href="mailto:sarabmr939@gmail.com?subject=Foco%20no%20ENEM">Enviar e-mail</a></div>
+            <p class="contact-note">Foco no ENEM · criado por Sara Carvalho.<br>Seu progresso de estudo fica no armazenamento local do navegador; esta aba de contato não envia dados automaticamente.</p>
+          </article>
+        </section>
+      </main>
+      <footer class="app-footer">Foco no ENEM · feito por Sara Carvalho · seus registros ficam salvos apenas neste navegador.</footer>
+    </div>
+  </div>
+
+  <dialog id="settingsDialog" aria-labelledby="settingsTitle">
+    <form id="settingsForm">
+      <div class="dialog-head"><div><h2 id="settingsTitle">Configurações do cronômetro</h2><p>Ajuste os blocos e as pausas para o seu ritmo.</p></div><button class="icon-btn" type="button" id="settingsClose" aria-label="Fechar configurações">×</button></div>
+      <div class="dialog-body">
+        <div class="form-grid">
+          <div class="field"><label for="focusMinutes">Tempo de foco</label><input id="focusMinutes" type="number" min="1" max="240" value="25" required><small>Digite minutos: 100 = 1h40. Máximo: 240 min (4 horas).</small></div>
+          <div class="field"><label for="shortMinutes">Pausa curta</label><input id="shortMinutes" type="number" min="1" max="60" value="5" required><small>Entre 1 e 60 minutos.</small></div>
+          <div class="field"><label for="longMinutes">Pausa longa</label><input id="longMinutes" type="number" min="1" max="90" value="15" required><small>Entre 1 e 90 minutos.</small></div>
+          <div class="field"><label for="cycleCount">Focos até a pausa longa</label><input id="cycleCount" type="number" min="2" max="8" value="4" required><small>De 2 a 8 blocos de foco.</small></div>
+        </div>
+        <div class="field"><label for="customSubjects">Suas matérias</label><input id="customSubjects" type="text" maxlength="180" placeholder="Ex.: Física, Geografia, Repertório"><small>Separe por vírgulas. Elas aparecem nas listas de foco e questões.</small></div>
+        <div class="field"><label for="volumeInput">Volume do som ambiente lo-fi</label><input id="volumeInput" type="range" min="0" max="100" value="30"><small id="volumeLabel">30% · sempre suave</small></div>
+        <label class="form-note"><input id="reducedMotion" type="checkbox"> Reduzir movimentos na interface.</label>
+        <div class="dialog-actions"><button class="button" type="submit">Salvar configurações</button><button class="button danger" type="button" id="clearHistory">Apagar meu progresso local</button></div>
+        <p class="tiny">O progresso e as configurações ficam salvos somente neste navegador. Não existe conta ou sincronização entre dispositivos.</p>
+      </div>
+    </form>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      'use strict';
+      const STORAGE_KEY = 'foco-enem-lofi-v1';
+      const tracks = [
+        { title: 'Noite de Âmbar', src: '/manus-storage/noite-de-ambar_ba9bfe6b.mp3' },
+        { title: 'Lembrança Brasileira', src: '/manus-storage/lembranca-brasileira_761069a6.mp3' },
+        { title: '1h40 da Manhã', src: '/manus-storage/1h40-da-manha_07a8819a.mp3' }
+      ];
+      const viewInfo = {
+        dashboard: { title: 'Painel', description: 'Visão geral do seu ritmo.' },
+        timer: { title: 'Cronômetro', description: 'Foco, pausas e música.' },
+        goals: { title: 'Metas', description: 'Objetivos diários ajustáveis.' },
+        calendar: { title: 'Calendário', description: 'Seu histórico de estudo.' },
+        questions: { title: 'Questões', description: 'Prática e desempenho.' },
+        contact: { title: 'Contato', description: 'Fale com Sara Carvalho.' }
+      };
+      const baseSubjects = ['Matemática','Linguagens','Ciências da Natureza','Ciências Humanas','Redação','Revisão geral'];
+      const defaults = { focus: 25, short: 5, long: 15, cycles: 4, goalHours: 16, questionGoal: 20, customSubjects: '', volume: 30, reducedMotion: false, cyclePosition: 0, history: [], questionHistory: [] };
+      const $ = (id) => document.getElementById(id);
+      const clamp = (value,min,max,fallback) => { const n = Number(value); return Number.isFinite(n) ? Math.min(max,Math.max(min,n)) : fallback; };
+      let settings = loadSettings();
+      let mode = 'focus';
+      let remaining = settings.focus * 60;
+      let blockDuration = remaining;
+      let running = false;
+      let endAt = 0;
+      let ticker = null;
+      let toastTimer = null;
+      let currentTrackIndex = 0;
+      let audio = null;
+      let audioPlaying = false;
+      let visibleMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      let selectedCalendarDate = dateKey();
+      const circumference = 2 * Math.PI * 110;
+      let progress = $('timerProgress');
+      progress.style.strokeDasharray = String(circumference);
+
+      function loadSettings() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+          const value = { ...defaults, ...parsed };
+          value.focus = clamp(value.focus,1,240,25);
+          value.short = clamp(value.short,1,60,5);
+          value.long = clamp(value.long,1,90,15);
+          value.cycles = clamp(value.cycles,2,8,4);
+          value.goalHours = clamp(value.goalHours,1,24,16);
+          value.questionGoal = clamp(value.questionGoal,0,1000,20);
+          value.volume = clamp(value.volume,0,100,30);
+          value.cyclePosition = clamp(value.cyclePosition,0,Math.max(0,value.cycles-1),0);
+          value.history = Array.isArray(value.history) ? value.history.filter(x => x && /^\d{4}-\d{2}-\d{2}$/.test(x.date) && Number.isFinite(Number(x.minutes)) && Number(x.minutes) >= 0).map(x => ({ ...x, minutes: Number(x.minutes) })) : [];
+          value.questionHistory = Array.isArray(value.questionHistory) ? value.questionHistory.filter(x => x && /^\d{4}-\d{2}-\d{2}$/.test(x.date) && Number.isInteger(Number(x.solved)) && Number(x.solved) > 0).map(x => ({ ...x, solved: Number(x.solved), correct: x.correct === null || x.correct === '' || x.correct === undefined ? null : Number(x.correct) })).filter(x => x.correct === null || (Number.isInteger(x.correct) && x.correct >= 0 && x.correct <= x.solved)) : [];
+          return value;
+        } catch { return { ...defaults, history: [], questionHistory: [] }; }
+      }
+      function persist() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch { showToast('Não foi possível salvar neste navegador.'); } }
+      function dateKey(date = new Date()) { return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`; }
+      function dateFromKey(key) { const [y,m,d] = key.split('-').map(Number); return new Date(y,m-1,d,12,0,0,0); }
+      function formatDate(key, options = { day: '2-digit', month: 'short', year: 'numeric' }) { return new Intl.DateTimeFormat('pt-BR',options).format(dateFromKey(key)); }
+      function formatDuration(minutes) { const total = Math.max(0,Math.round(Number(minutes)||0)); const hours = Math.floor(total/60); const rest = total%60; return hours ? (rest ? `${hours}h ${rest} min` : `${hours}h`) : `${total} min`; }
+      function formatTime(seconds) { const total = Math.max(0,Math.ceil(seconds)); const hours = Math.floor(total/3600); const minutes = Math.floor((total%3600)/60); const secs = total%60; return hours ? `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(secs).padStart(2,'0')}` : `${String(minutes).padStart(2,'0')}:${String(secs).padStart(2,'0')}`; }
+      function escapeHTML(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+      function modeDuration(which = mode) { return settings[which] * 60; }
+      function dayMinutes(key) { return settings.history.filter(x => x.date === key).reduce((sum,x) => sum + Number(x.minutes||0),0); }
+      function daySessions(key) { return settings.history.filter(x => x.date === key).length; }
+      function dayQuestions(key) { return settings.questionHistory.filter(x => x.date === key).reduce((sum,x) => sum + x.solved,0); }
+      function dayCorrect(key) { return settings.questionHistory.filter(x => x.date === key && Number.isInteger(x.correct)).reduce((sum,x) => sum + x.correct,0); }
+      function minutesToday() { return dayMinutes(dateKey()); }
+      function sessionsToday() { return daySessions(dateKey()); }
+      function questionsToday() { return dayQuestions(dateKey()); }
+
+      function showView(name) {
+        if (!viewInfo[name]) return;
+        document.querySelectorAll('[data-view-panel]').forEach(panel => { panel.hidden = panel.dataset.viewPanel !== name; });
+        document.querySelectorAll('[data-nav]').forEach(button => {
+          const active = button.dataset.nav === name;
+          button.classList.toggle('active',active);
+          if (active) button.setAttribute('aria-current','page'); else button.removeAttribute('aria-current');
+        });
+        $('activeViewTitle').textContent = viewInfo[name].title;
+        document.title = `${viewInfo[name].title} · Foco no ENEM`;
+        if (name === 'calendar') renderCalendar();
+        if (name === 'questions') renderQuestionHistory();
+        if (name === 'goals') fillGoalsForm();
+      }
+      function showToast(message) { const node = $('toast'); node.textContent = message; node.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => node.classList.remove('show'),2800); }
+
+      function updateTimerUI() {
+        $('timeDisplay').textContent = formatTime(remaining);
+        $('timeDisplay').setAttribute('aria-label',`Tempo restante ${formatTime(remaining)}`);
+        const fraction = Math.max(0,Math.min(1,remaining/blockDuration));
+        progress.style.strokeDashoffset = String(circumference*(1-fraction));
+        const captions = { focus: 'HORA DE FOCAR', short: 'PAUSA CURTA', long: 'PAUSA LONGA' };
+        $('timerCaption').textContent = captions[mode];
+        $('timerHint').textContent = running ? (mode === 'focus' ? 'Sessão em andamento.' : 'Pausa em andamento.') : 'Pronto quando você estiver.';
+        $('startBtn').textContent = running ? 'Pausar cronômetro' : (remaining < modeDuration() ? 'Continuar sessão' : mode === 'focus' ? 'Começar a estudar' : 'Começar a pausa');
+        $('startBtn').setAttribute('aria-label',running ? 'Pausar cronômetro' : 'Iniciar cronômetro');
+        document.title = `${formatTime(remaining)} · ${mode === 'focus' ? 'Foco' : 'Pausa'} · Foco no ENEM`;
+      }
+      function updateModes() {
+        document.querySelectorAll('.mode-tab').forEach(button => { const active = button.dataset.mode === mode; button.classList.toggle('active',active); button.setAttribute('aria-selected',String(active)); });
+        updateTimerUI();
+      }
+      function setMode(next) {
+        if (!['focus','short','long'].includes(next)) return;
+        stopTicker(); running = false; $('musicPlayer').pause();
+        mode = next; remaining = modeDuration(next); blockDuration = remaining;
+        updateModes(); renderCycle();
+      }
+      function startPause() {
+        const player = $('musicPlayer');
+        if (running) { stopTicker(); running = false; player.pause(); updateTimerUI(); return; }
+        if (remaining <= 0) { remaining = modeDuration(); blockDuration = remaining; }
+        running = true; endAt = Date.now() + remaining*1000; ticker = setInterval(tick,200); updateTimerUI();
+        player.play().catch(() => showToast('Toque em reproduzir na faixa para liberar a música.'));
+      }
+      function stopTicker() { if (ticker !== null) { clearInterval(ticker); ticker = null; } }
+      function tick() { remaining = Math.max(0,Math.ceil((endAt-Date.now())/1000)); updateTimerUI(); if (remaining <= 0) finishPhase(); }
+      function finishPhase() {
+        stopTicker(); running = false; remaining = 0; $('musicPlayer').pause(); updateTimerUI(); playChime();
+        if (mode === 'focus') {
+          const subject = $('subjectSelect').value;
+          settings.history.push({ date: dateKey(), minutes: settings.focus, subject: subject === '__custom' ? 'Outra matéria' : subject, task: $('taskInput').value.trim().slice(0,80), time: Date.now() });
+          settings.cyclePosition = (settings.cyclePosition+1)%settings.cycles; persist(); renderStats();
+          const next = settings.cyclePosition === 0 ? 'long' : 'short';
+          showToast(next === 'long' ? 'Bloco concluído. Hora da pausa longa.' : 'Bloco concluído. Faça uma pausa curta.'); setMode(next);
+        } else { showToast('Pausa concluída. Quando quiser, seu próximo bloco espera.'); setMode('focus'); }
+        renderCycle();
+      }
+      function resetTimer() { stopTicker(); running = false; $('musicPlayer').pause(); remaining = modeDuration(); blockDuration = remaining; updateTimerUI(); showToast('Bloco reiniciado.'); }
+      function skipPhase() {
+        if (mode === 'focus' && running) { showToast('Pause ou conclua o bloco antes de avançar.'); return; }
+        const next = mode === 'focus' ? (settings.cyclePosition === settings.cycles-1 ? 'long' : 'short') : 'focus';
+        setMode(next); showToast(next === 'focus' ? 'Próximo bloco de foco preparado.' : 'Pausa preparada.');
+      }
+      function renderCycle() {
+        const items = [];
+        for (let i=0;i<settings.cycles;i++) {
+          const done = i < settings.cyclePosition;
+          const active = mode === 'focus' && i === settings.cyclePosition;
+          items.push(`<div class="list-row"><div class="list-main"><strong>${done?'✓ ':''}Bloco de foco ${i+1}${active?' · atual':''}</strong><span>${formatDuration(settings.focus)}</span></div><span class="list-value">${done?'Concluído':active?'Agora':'Pendente'}</span></div>`);
+        }
+        $('recentSessions').dataset.cycle = String(settings.cyclePosition);
+      }
+
+      function renderStats() {
+        const today = dateKey();
+        const todayFocus = dayMinutes(today);
+        const todayQ = dayQuestions(today);
+        const weeklyDays = [];
+        for (let i=6;i>=0;i--) { const d = new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()-i); weeklyDays.push(d); }
+        const weeklyMinutes = weeklyDays.map(d => dayMinutes(dateKey(d)));
+        const weeklyTotal = weeklyMinutes.reduce((a,b) => a+b,0);
+        $('headerMinutes').textContent = formatDuration(todayFocus);
+        $('todayTime').textContent = formatDuration(todayFocus);
+        $('todaySessions').textContent = String(daySessions(today));
+        $('todayQuestions').textContent = String(todayQ);
+        $('questionsTodaySummary').textContent = String(todayQ);
+        $('weekTime').textContent = formatDuration(weeklyTotal);
+        $('weekTotal').textContent = `${formatDuration(weeklyTotal)} no total`;
+        const focusGoal = settings.goalHours*60;
+        const focusPercent = Math.min(100,Math.round(todayFocus/focusGoal*100));
+        $('goalFill').style.width = `${focusPercent}%`; $('goalLabel').textContent = `${focusPercent}%`;
+        $('goalText').textContent = `Foco · meta de ${settings.goalHours} ${settings.goalHours===1?'hora':'horas'}`;
+        $('goalProgress').setAttribute('aria-valuemax',String(focusGoal)); $('goalProgress').setAttribute('aria-valuenow',String(Math.min(focusGoal,todayFocus)));
+        $('goalFillDetail').style.width = `${focusPercent}%`; $('focusGoalDetail').textContent = `${formatDuration(todayFocus)} de ${settings.goalHours} ${settings.goalHours===1?'hora':'horas'}`;
+        $('goalProgressDetail').setAttribute('aria-valuemax',String(focusGoal)); $('goalProgressDetail').setAttribute('aria-valuenow',String(Math.min(focusGoal,todayFocus)));
+        const qGoal = settings.questionGoal;
+        const qPercent = qGoal > 0 ? Math.min(100,Math.round(todayQ/qGoal*100)) : 0;
+        $('questionGoalText').textContent = qGoal > 0 ? `Questões · meta de ${qGoal} por dia` : 'Meta de questões não definida';
+        $('questionGoalLabel').textContent = qGoal > 0 ? `${qPercent}%` : '—'; $('questionGoalFill').style.width = `${qPercent}%`;
+        $('questionGoalProgress').setAttribute('aria-valuemax',String(qGoal||1)); $('questionGoalProgress').setAttribute('aria-valuenow',String(Math.min(qGoal,todayQ)));
+        $('questionGoalFillDetail').style.width = `${qPercent}%`; $('questionGoalDetail').textContent = qGoal > 0 ? `${todayQ} de ${qGoal} questões` : `${todayQ} questões · sem meta definida`;
+        $('questionGoalProgressDetail').setAttribute('aria-valuemax',String(qGoal||1)); $('questionGoalProgressDetail').setAttribute('aria-valuenow',String(Math.min(qGoal,todayQ)));
+        const names = ['dom','seg','ter','qua','qui','sex','sáb'];
+        const max = Math.max(settings.goalHours*60,...weeklyMinutes,1);
+        $('weekChart').innerHTML = weeklyDays.map((day,i) => `<div class="day-column ${i===6?'today':''}" title="${names[day.getDay()]}: ${weeklyMinutes[i]} min"><div class="bar-track"><div class="bar" style="height:${Math.max(weeklyMinutes[i]?5:2,weeklyMinutes[i]/max*100)}%"></div></div><span class="day-label">${names[day.getDay()]}</span></div>`).join('');
+        renderRecentSessions(); renderQuestionHistory(); renderQuestionSummary(); renderCalendar();
+      }
+      function renderRecentSessions() {
+        const recent = [...settings.history].sort((a,b) => Number(b.time||0)-Number(a.time||0)).slice(0,5);
+        $('recentSessions').innerHTML = recent.length ? recent.map(x => `<div class="list-row"><div class="list-main"><strong>${escapeHTML(x.task||x.subject||'Bloco de foco')}</strong><span>${escapeHTML(x.subject||'Estudo')} · ${formatDate(x.date)}</span></div><span class="list-value">${formatDuration(x.minutes)}</span></div>`).join('') : '<div class="empty-state">Seus blocos concluídos vão aparecer aqui.</div>';
+      }
+      function renderQuestionSummary() {
+        const total = settings.questionHistory.reduce((sum,x) => sum+x.solved,0);
+        const correct = settings.questionHistory.reduce((sum,x) => sum+(Number.isInteger(x.correct)?x.correct:0),0);
+        $('allQuestions').textContent = String(total); $('allCorrect').textContent = String(correct);
+      }
+      function renderQuestionHistory() {
+        const list = [...settings.questionHistory].sort((a,b) => Number(b.time||0)-Number(a.time||0)).slice(0,20);
+        const html = list.length ? list.map(x => `<div class="question-entry"><div class="question-entry-main"><strong>${escapeHTML(x.subject||'Questões')}</strong><span>${formatDate(x.date)}${x.correct===null?'':' · '+x.correct+' acertos'}</span></div><span class="question-entry-count">${x.solved} feitas</span><button class="delete-entry" type="button" data-delete-question="${escapeHTML(x.id||'')}" aria-label="Apagar este registro de questões">Apagar</button></div>`).join('') : '<div class="empty-state">Nenhuma questão registrada ainda. Adicione sua primeira sessão acima.</div>';
+        $('questionHistoryList').innerHTML = html;
+        const dashboard = [...settings.questionHistory].sort((a,b) => Number(b.time||0)-Number(a.time||0)).slice(0,4);
+        $('recentQuestions').innerHTML = dashboard.length ? dashboard.map(x => `<div class="list-row"><div class="list-main"><strong>${escapeHTML(x.subject||'Questões')}</strong><span>${formatDate(x.date)}${x.correct===null?'':' · '+x.correct+' acertos'}</span></div><span class="list-value">${x.solved} feitas</span></div>`).join('') : '<div class="empty-state">Os registros das suas questões vão aparecer aqui.</div>';
+      }
+      function renderCalendar() {
+        if (!$('calendarGrid')) return;
+        const year = visibleMonth.getFullYear(), month = visibleMonth.getMonth();
+        const first = new Date(year,month,1,12,0,0,0);
+        const offset = (first.getDay()+6)%7;
+        const daysInMonth = new Date(year,month+1,0).getDate();
+        const totalCells = Math.ceil((offset+daysInMonth)/7)*7;
+        const monthLabel = new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric'}).format(first);
+        $('calendarTitle').textContent = monthLabel.charAt(0).toLocaleUpperCase('pt-BR')+monthLabel.slice(1);
+        let monthMinutes = 0, monthQs = 0, cells = [];
+        for (let i=0;i<totalCells;i++) {
+          const dayNumber = i-offset+1;
+          if (dayNumber < 1 || dayNumber > daysInMonth) { cells.push('<div class="calendar-empty" aria-hidden="true"></div>'); continue; }
+          const day = new Date(year,month,dayNumber,12,0,0,0), key = dateKey(day);
+          const mins = dayMinutes(key), qs = dayQuestions(key), isToday = key === dateKey(), selected = key === selectedCalendarDate;
+          monthMinutes += mins; monthQs += qs;
+          const activity = mins > 0 || qs > 0;
+          cells.push(`<button class="calendar-day ${isToday?'today':''} ${selected?'selected':''} ${activity?'has-activity':''}" type="button" data-calendar-date="${key}" aria-pressed="${selected}" aria-label="${dayNumber} ${monthLabel}${activity?`, ${formatDuration(mins)} de foco, ${qs} questões`:''}"><span class="day-number">${dayNumber}</span><span class="day-minutes">${mins?formatDuration(mins):''}</span><span class="day-questions">${qs?`${qs} questões`:''}</span></button>`);
+        }
+        $('calendarGrid').innerHTML = cells.join('');
+        $('calendarMonthFocus').textContent = formatDuration(monthMinutes); $('calendarMonthQuestions').textContent = String(monthQs);
+        renderCalendarDetail();
+      }
+      function renderCalendarDetail() {
+        const key = selectedCalendarDate;
+        const sessions = settings.history.filter(x => x.date === key).sort((a,b) => Number(a.time||0)-Number(b.time||0));
+        const qLogs = settings.questionHistory.filter(x => x.date === key);
+        const summary = `<h4>${formatDate(key,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h4><p>${formatDuration(dayMinutes(key))} de foco · ${sessions.length} ${sessions.length===1?'bloco':'blocos'} completos · ${dayQuestions(key)} questões${dayCorrect(key)>0?` · ${dayCorrect(key)} acertos registrados`:''}</p>`;
+        const lines = sessions.map(x => `<p>Foco: ${escapeHTML(x.task||x.subject||'Bloco de estudo')}${x.subject?` · ${escapeHTML(x.subject)}`:''} · ${formatDuration(x.minutes)}</p>`).join('') + qLogs.map(x => `<p>Questões: ${x.solved} em ${escapeHTML(x.subject||'matéria não indicada')}${x.correct===null?'':` · ${x.correct} acertos`}</p>`).join('');
+        $('calendarDetail').innerHTML = summary+(lines||'<p>Nenhum registro neste dia.</p>');
+      }
+      function fillGoalsForm() { $('goalHours').value = settings.goalHours; $('questionGoal').value = settings.questionGoal; }
+      function saveGoals(event) {
+        event.preventDefault();
+        const hours = Number($('goalHours').value), questions = Number($('questionGoal').value);
+        if (!Number.isInteger(hours)||hours<1||hours>24) { $('goalHours').focus(); $('goalHours').reportValidity(); return; }
+        if (!Number.isInteger(questions)||questions<0||questions>1000) { $('questionGoal').focus(); $('questionGoal').reportValidity(); return; }
+        settings.goalHours = hours; settings.questionGoal = questions; persist(); renderStats(); showToast('Metas salvas neste dispositivo.');
+      }
+      function addQuestionRecord(event) {
+        event.preventDefault();
+        const solved = Number($('questionCount').value);
+        const correctText = $('questionCorrect').value.trim();
+        const correct = correctText === '' ? null : Number(correctText);
+        if (!Number.isInteger(solved)||solved<1||solved>5000) { $('questionCount').focus(); $('questionCount').reportValidity(); return; }
+        if (correct !== null && (!Number.isInteger(correct)||correct<0||correct>solved)) { $('questionCorrect').setCustomValidity('Informe de 0 até a quantidade de questões feitas.'); $('questionCorrect').reportValidity(); $('questionCorrect').setCustomValidity(''); return; }
+        const subject = $('questionSubject').value === '__custom' ? 'Outra matéria' : $('questionSubject').value;
+        const id = window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        settings.questionHistory.push({ id, date: dateKey(), time: Date.now(), subject, solved, correct });
+        persist(); $('questionsForm').reset(); populateSubjects(); renderStats(); showToast(`${solved} questões registradas.`);
+      }
+      function populateSubjects() {
+        const custom = settings.customSubjects.split(',').map(x=>x.trim()).filter(Boolean).slice(0,8);
+        const all = [...new Set([...baseSubjects,...custom])];
+        const options = all.map(subject=>`<option value="${escapeHTML(subject)}">${escapeHTML(subject)}</option>`).join('')+'<option value="__custom">Outra matéria…</option>';
+        const oldTimer = $('subjectSelect').value, oldQuestion = $('questionSubject').value;
+        $('subjectSelect').innerHTML = options; $('questionSubject').innerHTML = options;
+        if ([...$('subjectSelect').options].some(o=>o.value===oldTimer)) $('subjectSelect').value=oldTimer;
+        if ([...$('questionSubject').options].some(o=>o.value===oldQuestion)) $('questionSubject').value=oldQuestion;
+      }
+      function handleCustomSubject(select) {
+        if (select.value !== '__custom') return;
+        const name = prompt('Qual matéria você quer adicionar?');
+        if (name && name.trim()) {
+          const custom = name.trim().slice(0,40);
+          settings.customSubjects = [settings.customSubjects,custom].filter(Boolean).join(', '); persist(); populateSubjects();
+          $('subjectSelect').value = custom; $('questionSubject').value = custom;
+        } else select.value = baseSubjects[0];
+      }
+      function fillSettingsForm() {
+        $('focusMinutes').value = settings.focus; $('shortMinutes').value = settings.short; $('longMinutes').value = settings.long; $('cycleCount').value = settings.cycles;
+        $('customSubjects').value = settings.customSubjects; $('volumeInput').value = settings.volume; $('volumeLabel').textContent = `${settings.volume}% · sempre suave`; $('reducedMotion').checked = settings.reducedMotion;
+      }
+      function saveSettings(event) {
+        event.preventDefault();
+        const fields = { focus:['focusMinutes',1,240], short:['shortMinutes',1,60], long:['longMinutes',1,90], cycles:['cycleCount',2,8] };
+        for (const [key,[id,min,max]] of Object.entries(fields)) { const n=Number($(id).value); if (!Number.isInteger(n)||n<min||n>max) { $(id).focus(); $(id).reportValidity(); return; } settings[key]=n; }
+        settings.customSubjects = $('customSubjects').value; settings.volume = Number($('volumeInput').value); settings.reducedMotion = $('reducedMotion').checked;
+        settings.cyclePosition %= settings.cycles; document.body.classList.toggle('reduce-motion',settings.reducedMotion); persist(); populateSubjects();
+        if (!running) { remaining = modeDuration(); blockDuration = remaining; }
+        updateTimerUI(); renderStats(); $('settingsDialog').close(); showToast('Configurações atualizadas.');
+      }
+      function selectTrack(index,resumePlayback=false) {
+        const player = $('musicPlayer'); currentTrackIndex = (index+tracks.length)%tracks.length; player.pause(); player.src = tracks[currentTrackIndex].src; player.load(); $('trackTitle').textContent = tracks[currentTrackIndex].title;
+        document.querySelectorAll('.track-choice').forEach(button => { const active=Number(button.dataset.track)===currentTrackIndex; button.classList.toggle('active',active); button.setAttribute('aria-pressed',String(active)); });
+        if (resumePlayback) player.play().catch(()=>showToast('Toque em reproduzir para continuar a música.'));
+      }
+      function advanceTrack() { selectTrack(currentTrackIndex+1,true); }
+      function setAudioVolume() { if (audio) audio.master.gain.setTargetAtTime(settings.volume/100*.19,audio.ctx.currentTime,.4); }
+      function makeAudio() {
+        const AudioContextClass = window.AudioContext||window.webkitAudioContext;
+        if (!AudioContextClass) { showToast('Este navegador não oferece áudio ambiente.'); return null; }
+        const ctx = new AudioContextClass(), master=ctx.createGain(), filter=ctx.createBiquadFilter();
+        master.gain.value=0; filter.type='lowpass'; filter.frequency.value=900; filter.Q.value=.5; filter.connect(master); master.connect(ctx.destination);
+        const notes=[130.81,164.81,196,246.94];
+        const voices=notes.map((frequency,index)=>{const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type=index===3?'triangle':'sine';osc.frequency.value=frequency;gain.gain.value=index===3?.025:.055;osc.connect(gain);gain.connect(filter);osc.start();return osc;});
+        const noiseBuffer=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate),samples=noiseBuffer.getChannelData(0);let last=0;
+        for(let i=0;i<samples.length;i++){const white=Math.random()*2-1;last=(last+.018*white)/1.018;samples[i]=last*3.2;}
+        const noise=ctx.createBufferSource(),noiseFilter=ctx.createBiquadFilter(),noiseGain=ctx.createGain();noise.buffer=noiseBuffer;noise.loop=true;noiseFilter.type='lowpass';noiseFilter.frequency.value=420;noiseGain.gain.value=.025;noise.connect(noiseFilter);noiseFilter.connect(noiseGain);noiseGain.connect(filter);noise.start();
+        return {ctx,master,voices};
+      }
+      async function toggleAudio() {
+        const button=$('audioToggle');
+        if(audioPlaying){audioPlaying=false;if(audio)audio.master.gain.setTargetAtTime(0,audio.ctx.currentTime,.3);button.classList.remove('playing');button.setAttribute('aria-pressed','false');$('audioLabel').textContent='Som ambiente desligado';return;}
+        if(!audio)audio=makeAudio();if(!audio)return;
+        try{await audio.ctx.resume();audioPlaying=true;setAudioVolume();button.classList.add('playing');button.setAttribute('aria-pressed','true');$('audioLabel').textContent='Som ambiente ligado';}
+        catch{$('audioLabel').textContent='Som ambiente desligado';showToast('Não consegui iniciar o áudio neste navegador.');}
+      }
+      function playChime() {
+        if(!audio||!audioPlaying)return;
+        [523.25,659.25,783.99].forEach((frequency,i)=>{const osc=audio.ctx.createOscillator(),gain=audio.ctx.createGain(),start=audio.ctx.currentTime+i*.18;osc.type='sine';osc.frequency.value=frequency;gain.gain.setValueAtTime(0,start);gain.gain.linearRampToValueAtTime(settings.volume/100*.025,start+.04);gain.gain.exponentialRampToValueAtTime(.0001,start+.65);osc.connect(gain);gain.connect(audio.ctx.destination);osc.start(start);osc.stop(start+.7);});
+      }
+
+      document.querySelectorAll('[data-nav]').forEach(button=>button.addEventListener('click',()=>showView(button.dataset.nav)));
+      document.querySelectorAll('[data-navigate]').forEach(button=>button.addEventListener('click',()=>showView(button.dataset.navigate)));
+      $('startBtn').addEventListener('click',startPause); $('resetBtn').addEventListener('click',resetTimer); $('skipBtn').addEventListener('click',skipPhase);
+      document.querySelectorAll('.mode-tab').forEach(button=>button.addEventListener('click',()=>setMode(button.dataset.mode)));
+      $('musicPlayer').volume=.4; $('musicPlayer').addEventListener('ended',advanceTrack); $('audioToggle').addEventListener('click',toggleAudio);
+      $('previousTrack').addEventListener('click',()=>{const player=$('musicPlayer');if(player.currentTime>3){player.currentTime=0;return;}selectTrack(currentTrackIndex-1,!player.paused);});
+      $('nextTrack').addEventListener('click',()=>selectTrack(currentTrackIndex+1,!$('musicPlayer').paused));
+      document.querySelectorAll('.track-choice').forEach(button=>button.addEventListener('click',()=>selectTrack(Number(button.dataset.track),!$('musicPlayer').paused)));
+      $('subjectSelect').addEventListener('change',()=>handleCustomSubject($('subjectSelect'))); $('questionSubject').addEventListener('change',()=>handleCustomSubject($('questionSubject')));
+      $('goalsForm').addEventListener('submit',saveGoals); $('questionsForm').addEventListener('submit',addQuestionRecord);
+      $('questionHistoryList').addEventListener('click',event=>{const button=event.target.closest('[data-delete-question]');if(!button)return;const id=button.dataset.deleteQuestion;if(!confirm('Apagar este registro de questões do perfil local?'))return;settings.questionHistory=settings.questionHistory.filter(x=>x.id!==id);persist();renderStats();showToast('Registro removido.');});
+      $('calendarGrid').addEventListener('click',event=>{const button=event.target.closest('[data-calendar-date]');if(!button)return;selectedCalendarDate=button.dataset.calendarDate;renderCalendar();});
+      $('calendarPrev').addEventListener('click',()=>{visibleMonth=new Date(visibleMonth.getFullYear(),visibleMonth.getMonth()-1,1);selectedCalendarDate=dateKey(visibleMonth);renderCalendar();});
+      $('calendarNext').addEventListener('click',()=>{visibleMonth=new Date(visibleMonth.getFullYear(),visibleMonth.getMonth()+1,1);selectedCalendarDate=dateKey(visibleMonth);renderCalendar();});
+      $('settingsOpen').addEventListener('click',()=>{fillSettingsForm();$('settingsDialog').showModal();}); $('settingsClose').addEventListener('click',()=>$('settingsDialog').close()); $('settingsForm').addEventListener('submit',saveSettings);
+      $('volumeInput').addEventListener('input',event=>{const volume=Number(event.target.value);$('volumeLabel').textContent=`${volume}% · sempre suave`;settings.volume=volume;persist();setAudioVolume();});
+      $('clearHistory').addEventListener('click',()=>{if(!confirm('Apagar blocos de foco e registros de questões deste navegador? Essa ação não pode ser desfeita.'))return;settings.history=[];settings.questionHistory=[];settings.cyclePosition=0;persist();renderStats();renderCycle();showToast('Progresso local apagado.');});
+      document.addEventListener('keydown',event=>{if(event.code==='Space'&&!['INPUT','TEXTAREA','SELECT','BUTTON','A'].includes(document.activeElement.tagName)&&!$('settingsDialog').open){event.preventDefault();startPause();}if(event.key==='Escape'&&$('settingsDialog').open)$('settingsDialog').close();});
+      document.addEventListener('visibilitychange',()=>{if(running&&!document.hidden)tick();});
+      populateSubjects();fillGoalsForm();document.body.classList.toggle('reduce-motion',settings.reducedMotion);renderStats();renderCycle();updateModes();showView('dashboard');
+    })();
+  </script>
+</body>
+</html>
